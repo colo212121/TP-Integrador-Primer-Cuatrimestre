@@ -1,0 +1,171 @@
+{
+	"info": {
+		"_postman_id": "9c49e26a-1157-4c07-8f31-8e87e7739cda",
+		"name": "TPINTEGRADOR",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "traer todos los eventos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?name=poncho",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "poncho"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "trer eventos por nombre (existente)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?name=Taylor",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "Taylor"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "trear evento por nombre (no existente)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?name=ponncho",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "ponncho"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "traer evento por fecha (existente)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?start_date=2024-03-21",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "start_date",
+							"value": "2024-03-21"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "traer eventos por id (existente)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?id=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "traer eventos por id (no existente)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/event/?id=3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"event",
+						""
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "3"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
