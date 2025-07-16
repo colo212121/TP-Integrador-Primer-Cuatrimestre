@@ -55,9 +55,10 @@ export default class UserService {
 
     const token = jwt.sign(
       { id: user.id, first_name: user.first_name },
-      'tu_clave_secreta',  // Mejor usar variable de entorno para la clave secreta
+      process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
+    
 
     return { status: 200, success: true, message: "", token };
   }
