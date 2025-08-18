@@ -24,7 +24,7 @@ export default class EventRepository {
     try {
       await client.connect();
       let sql = `
-        SELECT events.name, events.description, event_locations.full_adress, users.first_name, users.last_name, events.start_date, events.duration_in_minutes, events.price, events.enabled_for_enrollment, events.max_assistance
+        SELECT events.id, events.name, events.description, event_locations.full_adress, users.first_name, users.last_name, events.start_date, events.duration_in_minutes, events.price, events.enabled_for_enrollment, events.max_assistance
         FROM events
         INNER JOIN event_locations ON events.id_event_location = event_locations.id
         INNER JOIN users ON events.id_creator_user = users.id
