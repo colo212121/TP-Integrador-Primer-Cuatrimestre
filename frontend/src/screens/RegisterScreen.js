@@ -3,24 +3,39 @@ import { Screen, Card, Title, Label, Input, Button, ErrorText } from '../compone
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterScreen({ navigation }) {
-  const { register } = useAuth();
+  const { register, registerLoading } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const onSubmit = async () => {
+    // Validación básica
+    if (!firstName.trim() || !lastName.trim() || !username.trim() || !password.trim()) {
+      setError('Por favor completa todos los campos');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     setError('');
-    setLoading(true);
     try {
-      await register({ first_name: firstName, last_name: lastName, username, password });
+      const result = await register({ 
+        first_name: firstName.trim(), 
+        last_name: lastName.trim(), 
+        username: username.trim(), 
+        password 
+      });
+      
+      // Mostrar mensaje de éxito y navegar de vuelta
+      alert(result.message || 'Usuario registrado exitosamente');
       navigation.goBack();
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -29,14 +44,41 @@ export default function RegisterScreen({ navigation }) {
       <Card>
         <Title>Crear cuenta</Title>
         <Label>Nombre</Label>
-        <Input value={firstName} onChangeText={setFirstName} placeholder="Nombre" />
+        <Input 
+          value={firstName} 
+          onChangeText={setFirstName} 
+          placeholder="Nombre"
+          editable={!registerLoading}
+        />
         <Label>Apellido</Label>
-        <Input value={lastName} onChangeText={setLastName} placeholder="Apellido" />
+        <Input 
+          value={lastName} 
+          onChangeText={setLastName} 
+          placeholder="Apellido"
+          editable={!registerLoading}
+        />
         <Label>Usuario</Label>
-        <Input value={username} onChangeText={setUsername} placeholder="Usuario" autoCapitalize="none" />
+        <Input 
+          value={username} 
+          onChangeText={setUsername} 
+          placeholder="Usuario" 
+          autoCapitalize="none"
+          editable={!registerLoading}
+        />
         <Label>Contraseña</Label>
-        <Input value={password} onChangeText={setPassword} placeholder="Contraseña" secureTextEntry />
-        <Button title="Registrarme" onPress={onSubmit} loading={loading} />
+        <Input 
+          value={password} 
+          onChangeText={setPassword} 
+          placeholder="Contraseña" 
+          secureTextEntry
+          editable={!registerLoading}
+        />
+        <Button 
+          title="Registrarme" 
+          onPress={onSubmit} 
+          loading={registerLoading}
+          disabled={registerLoading}
+        />
         <ErrorText>{error}</ErrorText>
       </Card>
     </Screen>

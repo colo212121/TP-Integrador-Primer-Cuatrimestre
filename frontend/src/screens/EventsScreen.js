@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { Screen, Card, Title, Input, Label, Badge, Button, Chip } from '../components/UI';
-import { apiGet, apiPost, apiDelete } from '../api/client';
+import { FlatList, RefreshControl, StyleSheet, Text, View, Alert } from 'react-native';
+import { Screen, Card, Title, Input, Label, Badge, Button, Chip, ErrorText } from '../components/UI';
+import { useEvents } from '../context/EventContext';
+import { apiPost, apiDelete } from '../api/client';
 import theme from '../theme';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,8 +42,7 @@ function EventItem({ item, onEnroll, onUnenroll, onPress }) {
 }
 
 export default function EventsScreen() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { events, loading, error, clearError, fetchEvents } = useEvents();
   const [q, setQ] = useState('');
   const [date, setDate] = useState('');
   const [tag, setTag] = useState('');
@@ -50,9 +50,10 @@ export default function EventsScreen() {
   const [limit] = useState(10);
   const navigation = useNavigation();
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Función para cargar eventos sin dependencias problemáticas
+  const loadEvents = useCallback(async () => {
     try {
+      clearError();
       const params = { page, limit };
       if (q) params.name = q;
       if (date) {
@@ -61,43 +62,76 @@ export default function EventsScreen() {
         params.start_date = date;
       }
       if (tag) params.tag = tag;
-      const data = await apiGet('/event', false, params);
-      setEvents(data);
+      await fetchEvents(params);
     } catch (e) {
-      // noop visual for simplicity
-    } finally {
-      setLoading(false);
+      console.error('Error al cargar eventos:', e);
     }
-  }, [q, date, tag, page, limit]);
+  }, [q, date, tag, page, limit]); // Removidas fetchEvents y clearError de las dependencias
 
-  useEffect(() => { load(); }, [load]);
+  // Cargar eventos solo cuando cambien los filtros o la página
+  useEffect(() => { 
+    loadEvents(); 
+  }, [loadEvents]);
 
   const handleEnroll = async (id) => {
     try {
       await apiPost(`/event/${id}/enrollment`, {}, true);
-      await load();
-    } catch {}
+      await loadEvents(); // Recargar eventos después de inscribirse
+      Alert.alert('Éxito', 'Te has inscrito al evento correctamente');
+    } catch (error) {
+      console.error('Error al inscribirse:', error);
+      Alert.alert('Error', error.message || 'Error al inscribirse al evento');
+    }
   };
+
   const handleUnenroll = async (id) => {
     try {
       await apiDelete(`/event/${id}/enrollment`, true);
-      await load();
-    } catch {}
+      await loadEvents(); // Recargar eventos después de cancelar
+      Alert.alert('Éxito', 'Has cancelado tu inscripción al evento');
+    } catch (error) {
+      console.error('Error al cancelar inscripción:', error);
+      Alert.alert('Error', error.message || 'Error al cancelar inscripción');
+    }
   };
 
   return (
     <Screen>
       <Title>Eventos</Title>
+      
       <Label>Buscar por nombre</Label>
-      <Input placeholder="Ej: Taylor, Ajedrez..." value={q} onChangeText={setQ} onSubmitEditing={load} />
+      <Input 
+        placeholder="Ej: Taylor, Ajedrez..." 
+        value={q} 
+        onChangeText={setQ} 
+        onSubmitEditing={loadEvents}
+        editable={!loading}
+      />
+      
       <Label>Fecha de inicio (YYYY-MM-DD)</Label>
-      <Input placeholder="2025-08-21" value={date} onChangeText={setDate} onSubmitEditing={load} />
+      <Input 
+        placeholder="2025-08-21" 
+        value={date} 
+        onChangeText={setDate} 
+        onSubmitEditing={loadEvents}
+        editable={!loading}
+      />
+      
       <Label>Tag</Label>
-      <Input placeholder="Rock, Pop..." value={tag} onChangeText={setTag} onSubmitEditing={load} />
+      <Input 
+        placeholder="Rock, Pop..." 
+        value={tag} 
+        onChangeText={setTag} 
+        onSubmitEditing={loadEvents}
+        editable={!loading}
+      />
+
+      {error && <ErrorText>{error}</ErrorText>}
+
       <FlatList
         data={events}
-        keyExtractor={(item, idx) => String(idx)}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        keyExtractor={(item, idx) => String(item.id || idx)}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadEvents} />}
         renderItem={({ item }) => (
           <EventItem
             item={item}
@@ -108,10 +142,21 @@ export default function EventsScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: theme.spacing(1) }} />}
       />
+      
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-        <Button title="Anterior" variant="outline" onPress={() => setPage(Math.max(1, page - 1))} disabled={page === 1 || loading} />
-        <Chip>Pagina {page}</Chip>
-        <Button title="Siguiente" variant="outline" onPress={() => setPage(page + 1)} disabled={loading} />
+        <Button 
+          title="Anterior" 
+          variant="outline" 
+          onPress={() => setPage(Math.max(1, page - 1))} 
+          disabled={page === 1 || loading} 
+        />
+        <Chip>Página {page}</Chip>
+        <Button 
+          title="Siguiente" 
+          variant="outline" 
+          onPress={() => setPage(page + 1)} 
+          disabled={loading} 
+        />
       </View>
     </Screen>
   );
