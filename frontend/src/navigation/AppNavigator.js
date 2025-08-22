@@ -20,6 +20,11 @@ function Tabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: theme.colors.backgroundLight,
+          borderTopColor: theme.colors.border
+        },
         tabBarIcon: ({ color, size }) => {
           const map = { Events: 'calendar', Create: 'add-circle', Locations: 'location', Profile: 'person' };
           const name = map[route.name] || 'ellipse';
@@ -39,7 +44,13 @@ export default function AppNavigator() {
   const { token, loading } = useAuth();
   if (loading) return null;
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.backgroundLight },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: { fontWeight: '700' }
+      }}
+    >
       {token ? (
         <>
           <Stack.Screen name="Root" component={Tabs} options={{ headerShown: false }} />
@@ -47,7 +58,7 @@ export default function AppNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Ingresar' }} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Ingresar', headerShown: false }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Crear cuenta' }} />
         </>
       )}

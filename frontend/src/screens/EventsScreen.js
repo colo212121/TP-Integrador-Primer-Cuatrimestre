@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View, Alert } from 'react-native';
-import { Screen, Card, Title, Input, Label, Badge, Button, Chip, ErrorText } from '../components/UI';
+import { Screen, Card, Title, Input, Label, Badge, Button, Chip, ErrorText, Subtitle, Divider, Avatar } from '../components/UI';
 import { useEvents } from '../context/EventContext';
 import { apiPost, apiDelete } from '../api/client';
 import theme from '../theme';
@@ -10,32 +10,68 @@ import { useNavigation } from '@react-navigation/native';
 
 function EventItem({ item, onEnroll, onUnenroll, onPress }) {
   const start = item.start_date ? format(new Date(item.start_date), 'PPPP p', { locale: es }) : '';
+  
+  // Determinar si es evento premium o destacado
+  const isPremium = item.price > 1000;
+  const isFeatured = item.max_assistance > 500;
+  const cardVariant = isPremium ? 'premium' : isFeatured ? 'featured' : 'default';
+  
   return (
-    <Card style={styles.card}>
-      <View style={styles.rowBetween}>
-        <View style={styles.flex1}>
-          <Text style={styles.name} onPress={onPress}>{item.name}</Text>
-          <Text style={styles.meta}>ID: {item.id ?? '—'}</Text>
-          <Text numberOfLines={2} style={styles.description}>{item.description}</Text>
-          <View style={styles.rowWrap}>
-            <Badge>{item.duration_in_minutes} min</Badge>
-            <Badge tone="muted">${item.price}</Badge>
-            {item.enabled_for_enrollment ? <Badge tone="primary">Inscripciones abiertas</Badge> : <Badge tone="danger">Cerrado</Badge>}
-          </View>
-          <Text style={styles.meta}>{start}</Text>
-          <Text style={styles.meta}>Capacidad: {item.max_assistance}</Text>
-          <Text style={styles.meta}>Lugar: {item.full_adress}</Text>
-          <Text style={styles.meta}>Creador: {item.first_name} {item.last_name}</Text>
+    <Card variant={cardVariant} style={styles.eventCard}>
+      <View style={styles.eventHeader}>
+        <View style={styles.eventInfo}>
+          <Text style={styles.eventName} onPress={onPress}>{item.name}</Text>
+          <Text style={styles.eventId}>ID: {item.id ?? '—'}</Text>
         </View>
-        <View style={styles.centered}>
-          {item.id ? (
-            item.enabled_for_enrollment ? (
-              <Text style={styles.enrollable} onPress={onEnroll}>Inscribirme</Text>
-            ) : (
-              <Text style={styles.notEnrollable} onPress={onUnenroll}>Cancelar</Text>
-            )
-          ) : null}
+        <Avatar size="small" />
+      </View>
+      
+      <Text numberOfLines={3} style={styles.eventDescription}>{item.description}</Text>
+      
+      <View style={styles.badgeContainer}>
+        <Badge variant="info">{item.duration_in_minutes} min</Badge>
+        <Badge variant={item.price > 0 ? "warning" : "success"}>
+          {item.price > 0 ? `$${item.price}` : 'Gratis'}
+        </Badge>
+        {isPremium && <Badge variant="premium">Premium</Badge>}
+        {isFeatured && <Badge variant="featured">Destacado</Badge>}
+        {item.enabled_for_enrollment ? 
+          <Badge variant="success">Inscripciones abiertas</Badge> : 
+          <Badge variant="danger">Cerrado</Badge>
+        }
+      </View>
+      
+      <Divider />
+      
+      <View style={styles.eventDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>📅 Fecha:</Text>
+          <Text style={styles.detailValue}>{start}</Text>
         </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>👥 Capacidad:</Text>
+          <Text style={styles.detailValue}>{item.max_assistance} personas</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>📍 Lugar:</Text>
+          <Text style={styles.detailValue}>{item.full_adress}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>👤 Organizador:</Text>
+          <Text style={styles.detailValue}>{item.first_name} {item.last_name}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.eventActions}>
+        {item.id && (
+          <Button
+            title={item.enabled_for_enrollment ? "🎫 Inscribirme" : "❌ Cancelar"}
+            variant={item.enabled_for_enrollment ? "primary" : "danger"}
+            size="small"
+            onPress={item.enabled_for_enrollment ? onEnroll : onUnenroll}
+            style={styles.actionButton}
+          />
+        )}
       </View>
     </Card>
   );
@@ -77,10 +113,10 @@ export default function EventsScreen() {
     try {
       await apiPost(`/event/${id}/enrollment`, {}, true);
       await loadEvents(); // Recargar eventos después de inscribirse
-      Alert.alert('Éxito', 'Te has inscrito al evento correctamente');
+      Alert.alert('🎉 ¡Éxito!', 'Te has inscrito al evento correctamente');
     } catch (error) {
       console.error('Error al inscribirse:', error);
-      Alert.alert('Error', error.message || 'Error al inscribirse al evento');
+      Alert.alert('❌ Error', error.message || 'Error al inscribirse al evento');
     }
   };
 
@@ -88,50 +124,63 @@ export default function EventsScreen() {
     try {
       await apiDelete(`/event/${id}/enrollment`, true);
       await loadEvents(); // Recargar eventos después de cancelar
-      Alert.alert('Éxito', 'Has cancelado tu inscripción al evento');
+      Alert.alert('✅ Confirmado', 'Has cancelado tu inscripción al evento');
     } catch (error) {
       console.error('Error al cancelar inscripción:', error);
-      Alert.alert('Error', error.message || 'Error al cancelar inscripción');
+      Alert.alert('❌ Error', error.message || 'Error al cancelar inscripción');
     }
   };
 
   return (
     <Screen>
-      <Title>Eventos</Title>
+      <Title variant="hero">🎪 Eventos</Title>
+      <Subtitle>Descubre los mejores eventos y experiencias únicas</Subtitle>
       
-      <Label>Buscar por nombre</Label>
-      <Input 
-        placeholder="Ej: Taylor, Ajedrez..." 
-        value={q} 
-        onChangeText={setQ} 
-        onSubmitEditing={loadEvents}
-        editable={!loading}
-      />
-      
-      <Label>Fecha de inicio (YYYY-MM-DD)</Label>
-      <Input 
-        placeholder="2025-08-21" 
-        value={date} 
-        onChangeText={setDate} 
-        onSubmitEditing={loadEvents}
-        editable={!loading}
-      />
-      
-      <Label>Tag</Label>
-      <Input 
-        placeholder="Rock, Pop..." 
-        value={tag} 
-        onChangeText={setTag} 
-        onSubmitEditing={loadEvents}
-        editable={!loading}
-      />
+      <Card style={styles.searchCard}>
+        <Title variant="section">🔎 Buscar eventos</Title>
+        <View style={styles.searchSection}>
+          <Label>Nombre</Label>
+          <Input 
+            variant="search"
+            placeholder="Ej: Taylor Swift, Ajedrez, Rock..." 
+            value={q} 
+            onChangeText={setQ} 
+            onSubmitEditing={loadEvents}
+            editable={!loading}
+          />
+          
+          <Label>Fecha de inicio (YYYY-MM-DD)</Label>
+          <Input 
+            placeholder="2025-08-21" 
+            value={date} 
+            onChangeText={setDate} 
+            onSubmitEditing={loadEvents}
+            editable={!loading}
+          />
+          
+          <Label>Categoría</Label>
+          <Input 
+            placeholder="Rock, Pop, Deportes..." 
+            value={tag} 
+            onChangeText={setTag} 
+            onSubmitEditing={loadEvents}
+            editable={!loading}
+          />
+        </View>
+      </Card>
 
       {error && <ErrorText>{error}</ErrorText>}
 
       <FlatList
         data={events}
-        keyExtractor={(item, idx) => String(item.id || idx)}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadEvents} />}
+        keyExtractor={(item) => String(item.id || Math.random())}
+        refreshControl={
+          <RefreshControl 
+            refreshing={loading} 
+            onRefresh={loadEvents}
+            tintColor={theme.colors.primary}
+          />
+        }
         renderItem={({ item }) => (
           <EventItem
             item={item}
@@ -140,20 +189,23 @@ export default function EventsScreen() {
             onPress={() => item.id && navigation.navigate('EventDetail', { id: item.id })}
           />
         )}
-        ItemSeparatorComponent={() => <View style={{ height: theme.spacing(1) }} />}
+        ItemSeparatorComponent={() => <View style={{ height: theme.spacing(2) }} />}
+        showsVerticalScrollIndicator={false}
       />
       
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+      <View style={styles.paginationContainer}>
         <Button 
-          title="Anterior" 
+          title="⬅️ Anterior" 
           variant="outline" 
+          size="small"
           onPress={() => setPage(Math.max(1, page - 1))} 
           disabled={page === 1 || loading} 
         />
-        <Chip>Página {page}</Chip>
+        <Chip selected>📄 Página {page}</Chip>
         <Button 
-          title="Siguiente" 
+          title="Siguiente ➡️" 
           variant="outline" 
+          size="small"
           onPress={() => setPage(page + 1)} 
           disabled={loading} 
         />
@@ -163,16 +215,98 @@ export default function EventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: theme.spacing(1) },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 6 },
-  flex1: { flex: 1 },
-  centered: { justifyContent: 'center' },
-  name: { fontSize: 18, fontWeight: '700', color: theme.colors.text, marginBottom: 6 },
-  description: { color: theme.colors.muted, marginBottom: 6 },
-  meta: { color: theme.colors.muted },
-  enrollable: { color: theme.colors.primary, fontWeight: '700' },
-  notEnrollable: { color: theme.colors.danger, fontWeight: '700' }
+  eventCard: {
+    marginBottom: theme.spacing(2)
+  },
+  
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing(2)
+  },
+  
+  eventInfo: {
+    flex: 1,
+    marginRight: theme.spacing(2)
+  },
+  
+  eventName: { 
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: '700', 
+    color: theme.colors.text, 
+    marginBottom: theme.spacing(0.5),
+    lineHeight: theme.typography.lineHeight.tight
+  },
+  
+  eventId: { 
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    fontWeight: '500'
+  },
+  
+  eventDescription: { 
+    color: theme.colors.textSecondary, 
+    marginBottom: theme.spacing(2),
+    lineHeight: theme.typography.lineHeight.normal,
+    fontSize: theme.typography.fontSize.base
+  },
+  
+  badgeContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: theme.spacing(1), 
+    marginBottom: theme.spacing(2)
+  },
+  
+  eventDetails: {
+    marginBottom: theme.spacing(2)
+  },
+  
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(1)
+  },
+  
+  detailLabel: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    fontWeight: '600'
+  },
+  
+  detailValue: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right'
+  },
+  
+  eventActions: {
+    alignItems: 'flex-end'
+  },
+  
+  actionButton: {
+    minWidth: 120
+  },
+  
+  searchCard: {
+    marginBottom: theme.spacing(3)
+  },
+  
+  searchSection: {
+    marginTop: theme.spacing(1)
+  },
+  
+  paginationContainer: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginTop: theme.spacing(3),
+    paddingHorizontal: theme.spacing(1)
+  }
 });
 
 

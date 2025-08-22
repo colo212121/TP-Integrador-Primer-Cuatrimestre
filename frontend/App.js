@@ -9,12 +9,15 @@ import theme from './src/theme';
 export default function App() {
   const navTheme = {
     ...DefaultTheme,
+    dark: true,
     colors: {
       ...DefaultTheme.colors,
       background: theme.colors.background,
       text: theme.colors.text,
       primary: theme.colors.primary,
-      card: '#fff'
+      card: theme.colors.backgroundLight,
+      border: theme.colors.border,
+      notification: theme.colors.accent
     }
   };
 
@@ -23,7 +26,7 @@ export default function App() {
       <EventProvider>
         <LocationProvider>
           <NavigationContainer theme={navTheme}>
-            <StatusBar style="dark" />
+            <StatusBar style="light" />
             <AppNavigator />
           </NavigationContainer>
         </LocationProvider>

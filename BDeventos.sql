@@ -63,7 +63,7 @@ ALTER TABLE public.event_enrollments OWNER TO postgres;
 --
 -- TOC entry 216 (class 1259 OID 16405)
 -- Name: event_enrollments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
+--n
 
 CREATE SEQUENCE public.event_enrollments_id_seq
     AS integer

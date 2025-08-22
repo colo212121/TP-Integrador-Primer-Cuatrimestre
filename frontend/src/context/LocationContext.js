@@ -16,7 +16,7 @@ export function LocationProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet('/event-location', false);
+      const data = await apiGet('/event-location', true);
       setLocations(data);
       return data;
     } catch (error) {
@@ -34,7 +34,7 @@ export function LocationProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet(`/event-location/${locationId}`, false);
+      const data = await apiGet(`/event-location/${locationId}`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener ubicación:', error);
@@ -107,7 +107,7 @@ export function LocationProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet('/event-location', false, { name });
+      const data = await apiGet('/event-location', true, { name });
       setLocations(data);
       return data;
     } catch (error) {

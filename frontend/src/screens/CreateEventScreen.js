@@ -4,6 +4,24 @@ import { apiGet, apiPost } from '../api/client';
 import { Switch, View } from 'react-native';
 import LocationPicker from '../components/LocationPicker';
 
+function normalizeDateTime(input) {
+  // Acepta formatos con guiones y espacios extra, devuelve "YYYY-MM-DD HH:mm"
+  if (!input) return '';
+  const cleaned = String(input)
+    .replace(/\s+/g, ' ')      // colapsa espacios
+    .replace(/\s*-\s*/g, '-') // quita espacios alrededor de guiones
+    .trim();
+  // Intentar separar fecha y hora
+  const [datePart = '', timePart = ''] = cleaned.split(' ');
+  const [y, m, d] = datePart.split('-').map((v) => v?.padStart(2, '0'));
+  let [hh = '00', mm = '00'] = timePart.split(':').map((v) => v?.padStart(2, '0'));
+  // Validaciones básicas
+  if (!y || !m || !d) return '';
+  if (Number(hh) > 23) hh = '23';
+  if (Number(mm) > 59) mm = '59';
+  return `${y}-${m}-${d} ${hh}:${mm}`;
+}
+
 export default function CreateEventScreen() {
   const [locations, setLocations] = useState([]);
   const [name, setName] = useState('');
@@ -23,7 +41,10 @@ export default function CreateEventScreen() {
       try {
         const data = await apiGet('/event-location', true);
         setLocations(data || []);
-      } catch {}
+      } catch (e) {
+        // Si falta token, mostrar mensaje claro
+        setError('No se pudieron cargar ubicaciones. Inicia sesión nuevamente.');
+      }
     })();
   }, []);
 
@@ -32,23 +53,27 @@ export default function CreateEventScreen() {
     setOk('');
     setLoading(true);
     try {
-      if (!idLocation) {
-        throw new Error('Seleccioná una ubicación.');
-      }
+      if (!idLocation) throw new Error('Seleccioná una ubicación.');
+      if (!name.trim()) throw new Error('Ingresá un nombre.');
+      if (!startDate.trim()) throw new Error('Ingresá la fecha de inicio.');
+
+      const normalized = normalizeDateTime(startDate);
+      if (!normalized) throw new Error('Fecha/hora inválida. Usa YYYY-MM-DD HH:mm');
+
       const body = {
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
         id_event_location: Number(idLocation),
-        start_date: startDate,
-        duration_in_minutes: Number(duration),
-        price: Number(price),
-        enabled_for_enrollment: enabled,
-        max_assistance: Number(maxAssistance)
+        start_date: normalized, // formato seguro para el backend
+        duration_in_minutes: Number(duration) || 0,
+        price: Number(price) || 0,
+        enabled_for_enrollment: !!enabled,
+        max_assistance: Number(maxAssistance) || 0
       };
       const res = await apiPost('/event', body, true);
       if (res?.success) setOk('Evento creado.');
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'Error al crear el evento');
     } finally {
       setLoading(false);
     }
@@ -77,8 +102,7 @@ export default function CreateEventScreen() {
         <Label>Asistencia máxima</Label>
         <Input value={maxAssistance} onChangeText={setMaxAssistance} placeholder="50" keyboardType="numeric" />
         <Button title="Crear" onPress={onSubmit} loading={loading} />
-        <ErrorText>{error}</ErrorText>
-        {ok ? <View style={{ marginTop: 8 }}><Label>{ok}</Label></View> : null}
+        <ErrorText>{error || ok}</ErrorText>
       </Card>
     </Screen>
   );
